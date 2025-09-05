@@ -1,7 +1,8 @@
 // features/extensions/ExtensionScaffolder.ts
 import React from 'react';
 import { extensionAIService } from './ExtensionAIService';
-import { fileService } from '../../services/fileService';
+// FIX: Replaced obsolete fileService with useFileStore for state management.
+import { useFileStore } from '../../store/fileStore';
 import { useUIStore } from '../../store/uiStore';
 import { RegisterFunction, ViewletModule } from '../../runtime/types';
 
@@ -17,9 +18,23 @@ class ExtensionScaffolder {
       throw new Error('AI response was malformed. Missing required fields.');
     }
 
-    // 2. Write the new component file to the in-memory file system
+    // FIX: Use useFileStore to write the new component file to the in-memory file system.
     const componentPath = `/features/${featureName}/${componentName}.tsx`;
-    fileService.writeFile(componentPath, componentContent);
+    const { addNode, findNode, updateFileContent } = useFileStore.getState();
+    
+    // Ensure parent directories exist before creating the file
+    if (!findNode('/features')) {
+        addNode('/', 'features', 'folder');
+    }
+    const featureFolderPath = `/features/${featureName}`;
+    if (!findNode(featureFolderPath)) {
+        addNode('/features', featureName, 'folder');
+    }
+    
+    // Create the new file and update its content
+    addNode(featureFolderPath, `${componentName}.tsx`, 'file');
+    updateFileContent(componentPath, componentContent);
+
 
     // 3. Dynamically import the new component code string
     const blob = new Blob([componentContent], { type: 'application/javascript' });

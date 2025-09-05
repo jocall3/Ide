@@ -1,24 +1,53 @@
+
 // components/shell/MainView.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import * as monaco from 'monaco-editor';
 import { useUIStore } from '../../store/uiStore';
+import { useFileStore } from '../../store/fileStore';
 import { CloseIcon } from '../../assets/icons';
 import Editor from '../ui/Editor';
 
 const MainView: React.FC = () => {
-  const { openTabs, activeTabId, setActiveTab, closeTab } = useUIStore(
-    (state) => ({
-      openTabs: state.openTabs,
-      activeTabId: state.activeTabId,
-      setActiveTab: state.setActiveTab,
-      closeTab: state.closeTab,
-    })
-  );
+  const { openTabs, activeTabId, setActiveTab, closeTab, setTabDirty, setTabClean } = useUIStore();
+  const updateFileContent = useFileStore((state) => state.updateFileContent);
 
   const handleCloseTab = (e: React.MouseEvent, tabId: string) => {
     e.stopPropagation(); // Prevent click from bubbling to the tab itself
     closeTab(tabId);
   };
+
+  const handleContentChange = (path: string, value: string) => {
+    const tab = openTabs.find(t => t.id === path);
+    // Only mark as dirty if content actually changed from its clean state
+    if (tab && !tab.isDirty) {
+        const file = useFileStore.getState().findNode(path);
+        if (file && file.type === 'file' && file.content !== value) {
+            setTabDirty(path);
+        }
+    }
+  };
+  
+  // Effect for handling save shortcut (Cmd/Ctrl + S)
+  useEffect(() => {
+    const handleSave = (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+            e.preventDefault();
+            if (activeTabId) {
+                const model = monaco.editor.getModel(monaco.Uri.parse(activeTabId));
+                if (model) {
+                    const newContent = model.getValue();
+                    console.log(`[MainView] Saving file: ${activeTabId}`);
+                    updateFileContent(activeTabId, newContent);
+                    setTabClean(activeTabId);
+                }
+            }
+        }
+    };
+    window.addEventListener('keydown', handleSave);
+    return () => window.removeEventListener('keydown', handleSave);
+  }, [activeTabId, updateFileContent, setTabClean]);
+
 
   const activeTab = openTabs.find(tab => tab.id === activeTabId);
 
@@ -31,6 +60,7 @@ const MainView: React.FC = () => {
             className={`main-view-tab ${tab.id === activeTabId ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
+            <div className={`tab-dirty-indicator ${!tab.isDirty ? 'hidden' : ''}`} />
             <span>{tab.title}</span>
             <button 
               className="tab-close-btn" 
@@ -48,6 +78,7 @@ const MainView: React.FC = () => {
             key={activeTab.id}
             path={activeTab.id}
             defaultValue={activeTab.content}
+            onContentChange={handleContentChange}
           />
         ) : (
           <div style={{ padding: '1rem' }}>

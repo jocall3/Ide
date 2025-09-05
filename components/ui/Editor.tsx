@@ -1,63 +1,74 @@
+
 // components/ui/Editor.tsx
 
 import React, { useRef, useEffect } from 'react';
 import * as monaco from 'monaco-editor';
 
-// Since we are using a CDN, the worker needs to be configured.
-// This is a common setup for using monaco-editor without a build tool like Webpack.
+// Configure Monaco Editor to load its worker scripts from the CDN.
+// This is the standard, robust way to set up workers when not using a bundler plugin.
+// It resolves the CORS and "Script error" issues caused by the previous implementation.
 (self as any).MonacoEnvironment = {
-  getWorker: function (_moduleId: any, label: string) {
-    const getWorkerModule = (moduleUrl: string, label: string) => {
-      return new Worker(URL.createObjectURL(new Blob([`
-        self.MonacoEnvironment = {
-          baseUrl: 'https://aistudiocdn.com/monaco-editor@^0.49.0/min/'
-        };
-        importScripts('https://aistudiocdn.com/monaco-editor@^0.49.0/min/vs/base/worker/workerMain.js');
-      `], { type: 'application/javascript' })));
-    };
+  getWorkerUrl: function (_moduleId: string, label: string) {
+    // Note: The version here should match the version in the importmap.
+    const CDN_BASE_URL = 'https://aistudiocdn.com/monaco-editor@^0.52.2/min';
 
     if (label === 'json') {
-      return getWorkerModule('/vs/language/json/json.worker.js', label);
+      return `${CDN_BASE_URL}/vs/language/json/json.worker.js`;
     }
     if (label === 'css' || label === 'scss' || label === 'less') {
-      return getWorkerModule('/vs/language/css/css.worker.js', label);
+      return `${CDN_BASE_URL}/vs/language/css/css.worker.js`;
     }
     if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return getWorkerModule('/vs/language/html/html.worker.js', label);
+      return `${CDN_BASE_URL}/vs/language/html/html.worker.js`;
     }
     if (label === 'typescript' || label === 'javascript') {
-      return getWorkerModule('/vs/language/typescript/ts.worker.js', label);
+      return `${CDN_BASE_URL}/vs/language/typescript/ts.worker.js`;
     }
-    return getWorkerModule('/vs/editor/editor.worker.js', label);
+    return `${CDN_BASE_URL}/vs/editor/editor.worker.js`;
   },
 };
 
 interface EditorProps {
   path: string;
   defaultValue: string;
+  onContentChange?: (path: string, value: string) => void;
 }
 
-const Editor: React.FC<EditorProps> = ({ path, defaultValue }) => {
+const Editor: React.FC<EditorProps> = ({ path, defaultValue, onContentChange }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const editorInstance = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
     if (editorRef.current) {
-      const model = monaco.editor.getModel(monaco.Uri.parse(path)) || 
-                    monaco.editor.createModel(defaultValue, undefined, monaco.Uri.parse(path));
+      const modelUri = monaco.Uri.parse(path);
+      const model = monaco.editor.getModel(modelUri) || 
+                    monaco.editor.createModel(defaultValue, undefined, modelUri);
 
+      // If the model exists but has different content (e.g., file was updated), update it.
+      if (model.getValue() !== defaultValue) {
+        model.setValue(defaultValue);
+      }
+      
       editorInstance.current = monaco.editor.create(editorRef.current, {
         model: model,
         theme: 'vs-dark',
         automaticLayout: true,
         minimap: { enabled: true },
       });
-    }
 
-    return () => {
-      editorInstance.current?.dispose();
-    };
-  }, [path, defaultValue]);
+      // Listen for content changes to flag tabs as "dirty"
+      const changeListener = editorInstance.current.onDidChangeModelContent(() => {
+        if (onContentChange && editorInstance.current) {
+          onContentChange(path, editorInstance.current.getValue());
+        }
+      });
+
+      return () => {
+        changeListener.dispose();
+        editorInstance.current?.dispose();
+      };
+    }
+  }, [path, defaultValue, onContentChange]);
 
   return <div className="editor-container" ref={editorRef} />;
 };

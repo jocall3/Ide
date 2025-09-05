@@ -1,3 +1,4 @@
+
 :root {
   --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   --background-primary: #1e1e1e;
@@ -118,14 +119,43 @@ body {
   padding: 8px;
   flex-shrink: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .side-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   text-transform: uppercase;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
   padding: 0 4px 8px 4px;
+}
+
+.side-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.6;
+}
+
+.side-panel-actions:hover {
+    opacity: 1;
+}
+
+.side-panel-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.side-panel-action-btn:hover {
+    background-color: var(--background-tertiary);
 }
 
 /* Main View */
@@ -162,6 +192,20 @@ body {
 .main-view-tab.active {
   background-color: var(--background-primary);
   color: var(--text-primary);
+}
+
+.tab-dirty-indicator {
+    width: 8px;
+    height: 8px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    margin-left: -4px; /* Nudge closer to title */
+    transition: all 0.2s ease;
+}
+
+.tab-dirty-indicator.hidden {
+    transform: scale(0);
+    width: 0;
 }
 
 .tab-close-btn {
@@ -257,8 +301,13 @@ body {
 }
 
 /* Feature Placeholders */
+.search-view {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 .search-view input {
-  width: 100%;
+  width: calc(100% - 16px);
   box-sizing: border-box;
   padding: 8px;
   background-color: var(--background-primary);
@@ -266,7 +315,41 @@ body {
   color: var(--text-primary);
   border-radius: 4px;
 }
+.search-results {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 8px; /* For scrollbar */
+}
+.search-result-item {
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.search-result-item:hover {
+    background-color: var(--background-tertiary);
+}
+.search-result-file {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+.search-result-snippet {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding-left: 20px;
+    white-space: pre;
+}
+.search-result-snippet mark {
+    background-color: var(--accent-color);
+    color: white;
+}
 
+
+.explorer-view {
+    flex-grow: 1;
+}
 .explorer-view ul {
   list-style: none;
   padding-left: 16px;
@@ -275,24 +358,33 @@ body {
 
 .explorer-view li {
   padding: 4px;
-  cursor: pointer;
   color: var(--text-secondary);
   border-radius: 4px;
-}
-
-.explorer-view li:hover {
-  background-color: var(--background-tertiary);
-}
-
-.explorer-view .file {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+.explorer-view .file-entry {
+  cursor: pointer;
+}
+.explorer-view .file-entry:hover {
+  background-color: var(--background-tertiary);
+}
 
-.explorer-view .folder {
+.explorer-view .folder > .file-entry {
   font-weight: bold;
 }
+.explorer-node-input {
+    background-color: var(--background-primary);
+    border: 1px solid var(--accent-color);
+    color: var(--text-primary);
+    padding: 2px 4px;
+    margin-left: 20px; /* Indent it like a file */
+}
+.explorer-node-input:focus {
+    outline: none;
+}
+
 
 /* Command Palette */
 .command-palette-overlay {
@@ -355,6 +447,32 @@ body {
   background-color: var(--accent-color);
   color: white;
 }
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    z-index: 1001;
+    background-color: var(--background-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    padding: 4px 0;
+    min-width: 150px;
+}
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
+.context-menu-item:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
 
 /* Extension Maker */
 .extensions-view-tabs {

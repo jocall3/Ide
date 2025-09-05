@@ -1,3 +1,4 @@
+
 // components/shell/SidePanel.tsx
 
 import React from 'react';
@@ -29,7 +30,10 @@ const SidePanel: React.FC = () => {
 
   return (
     <aside className="side-panel">
-      <div className="side-panel-header">{activeViewlet.name}</div>
+      {/* Some components like Explorer will render their own header */}
+      {activeViewlet.id !== 'explorer' &&
+          <div className="side-panel-header">{activeViewlet.name}</div>
+      }
       <ViewComponent />
     </aside>
   );
