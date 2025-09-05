@@ -1,0 +1,16 @@
+{
+  "name": "hhghempty",
+  "private": true,
+  "version": "0.0.1",
+  "description": "A scalable application shell built with React, TypeScript, and a dynamic module system.",
+  "scripts": {
+    "dev": "echo \"Run this project in a compatible environment.\" && exit 1"
+  },
+  "dependencies": {
+    "@google/genai": "^0.14.0",
+    "monaco-editor": "^0.52.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+  },
+  "devDependencies": {
+    "@types/re
